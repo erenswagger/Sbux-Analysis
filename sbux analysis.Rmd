@@ -1,0 +1,1066 @@
+---
+title: "Behind the Starbucks Counter"
+output:
+  flexdashboard::flex_dashboard:
+    theme:
+      version: 4
+      bg: "#FBF7EE"
+      fg: "#2B2723"
+      primary: "#00704A"
+      secondary: "#9D5C3F"
+      success: "#00704A"
+      info: "#8FB3A1"
+      warning: "#C9A227"
+      danger: "#9D5C3F"
+    orientation: columns
+    vertical_layout: fill
+    navbar:
+      - title: "Menu data · TidyTuesday"
+        href: "https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-12-21/readme.md#starbucks"
+        align: right
+---
+
+```{css, echo=FALSE}
+/* ------------------------------------------------------------------
+   Café skin: cream paper, espresso ink, Starbucks green accents.
+   Styling only - no data or logic lives in here.
+   ------------------------------------------------------------------ */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --cafe-cream:  #FBF7EE;
+  --cafe-sand:   #F3ECDD;
+  --cafe-tan:    #E2D5BB;
+  --cafe-green:  #00704A;
+  --cafe-forest: #1E3932;
+  --cafe-mocha:  #9D5C3F;
+  --cafe-ink:    #2B2723;
+  --cafe-muted:  #6E665B;
+}
+
+body, .main-container {
+  background-color: var(--cafe-cream);
+  color: var(--cafe-ink);
+  font-family: 'Inter', -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5,
+.chart-title, .navbar-brand, .navbar-title {
+  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.01em;
+}
+
+/* --- Navbar: dark roast green ------------------------------------- */
+.navbar, .navbar-inverse, .navbar-default {
+  background-color: var(--cafe-forest) !important;
+  background-image: none !important;
+  border: 0 !important;
+  border-bottom: 3px solid var(--cafe-green) !important;
+  box-shadow: 0 2px 14px -6px rgba(30, 57, 50, 0.55);
+}
+.navbar .navbar-brand, .navbar .navbar-title, .navbar-header .navbar-brand {
+  color: var(--cafe-cream) !important;
+  font-weight: 700;
+  font-size: 19px;
+}
+.navbar-nav > li > a, .navbar .nav-link {
+  color: rgba(251, 247, 238, 0.75) !important;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.navbar-nav > li.active > a,
+.navbar-nav > li > a:hover,
+.navbar .nav-link.active, .navbar .nav-link:hover {
+  color: #FFFFFF !important;
+  background-color: rgba(0, 112, 74, 0.55) !important;
+  border-radius: 8px;
+}
+
+/* --- Cards: menu boards on cream paper ---------------------------- */
+.chart-wrapper, .sbframe-commentary, .value-box {
+  background-color: #FFFFFF;
+  border: 1px solid var(--cafe-tan);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(30, 57, 50, 0.05),
+              0 14px 28px -20px rgba(30, 57, 50, 0.35);
+  margin: 9px;
+}
+.chart-wrapper .chart-title {
+  background-color: #FFFFFF;
+  border-bottom: 1px solid var(--cafe-sand);
+  border-radius: 14px 14px 0 0;
+  color: var(--cafe-forest);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 13px 18px 11px;
+  text-transform: uppercase;
+}
+.chart-stage, .chart-shim { padding: 6px 16px 14px; }
+
+/* --- Sidebar: the chalkboard -------------------------------------- */
+.section.sidebar {
+  background-color: var(--cafe-sand);
+  border-right: 1px solid var(--cafe-tan);
+  color: var(--cafe-ink);
+  font-size: 13.5px;
+  line-height: 1.58;
+  padding: 16px 20px;
+}
+.section.sidebar h3 {
+  color: var(--cafe-forest);
+  font-size: 16px;
+  margin-top: 4px;
+}
+.section.sidebar strong { color: var(--cafe-mocha); }
+
+/* --- Tabs --------------------------------------------------------- */
+.nav-tabs {
+  border-bottom: 1px solid var(--cafe-tan);
+  padding: 0 10px;
+}
+.nav-tabs > li > a, .nav-tabs .nav-link {
+  border: 0 !important;
+  color: var(--cafe-muted);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.nav-tabs > li.active > a, .nav-tabs .nav-link.active {
+  background-color: transparent !important;
+  border-bottom: 3px solid var(--cafe-green) !important;
+  color: var(--cafe-forest) !important;
+}
+
+/* --- Type details ------------------------------------------------- */
+a { color: var(--cafe-green); text-decoration: none; }
+a:hover { color: var(--cafe-mocha); text-decoration: underline; }
+hr { border-top: 1px solid var(--cafe-tan); }
+blockquote {
+  background-color: var(--cafe-sand);
+  border-left: 4px solid var(--cafe-green);
+  border-radius: 0 10px 10px 0;
+  color: var(--cafe-forest);
+  font-size: 14px;
+  padding: 10px 16px;
+}
+ul { padding-left: 20px; }
+li { margin-bottom: 3px; }
+code, pre {
+  background-color: var(--cafe-sand);
+  border: 1px solid var(--cafe-tan);
+  border-radius: 8px;
+  color: var(--cafe-forest);
+  font-family: 'SFMono-Regular', Consolas, Menlo, monospace;
+  font-size: 12.5px;
+}
+
+/* --- Tables ------------------------------------------------------- */
+.table, table {
+  background-color: #FFFFFF;
+  border-radius: 10px;
+  font-size: 13.5px;
+  overflow: hidden;
+}
+.table > tbody > tr:nth-of-type(odd), .table-striped tbody tr:nth-of-type(odd) {
+  background-color: var(--cafe-cream);
+}
+.table > tbody > tr:hover, .table-hover tbody tr:hover {
+  background-color: #EAF3EE !important;
+}
+caption, .table caption {
+  color: var(--cafe-muted);
+  font-size: 12.5px;
+  font-style: italic;
+  padding-bottom: 8px;
+}
+
+/* --- Gauges ------------------------------------------------------- */
+.gauge .gauge-value, .gauge text { font-family: 'Inter', sans-serif !important; }
+```
+
+```{r, echo=FALSE}
+options(repos = "https://cran.rstudio.com/")
+
+library(flexdashboard)
+library(tidyverse)
+library(naniar)
+library(broom)
+library(here)
+library(readr)
+library(kableExtra)
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(tidytext)
+library(tidytuesdayR)
+library(purrr)
+library(RColorBrewer)
+```
+
+```{r cafe_style, echo=FALSE}
+# ------------------------------------------------------------------
+# Visual kit only: café palette + one shared ggplot theme.
+# Nothing here reads, filters or computes data.
+# ------------------------------------------------------------------
+cafe_cream   <- "#FBF7EE"
+cafe_sand    <- "#F3ECDD"
+cafe_tan     <- "#D8C7A6"
+cafe_sage    <- "#8FB3A1"
+cafe_green   <- "#00704A"
+cafe_forest  <- "#1E3932"
+cafe_caramel <- "#C58B49"
+cafe_mocha   <- "#9D5C3F"
+cafe_gold    <- "#C9A227"
+cafe_ink     <- "#2B2723"
+cafe_grey    <- "#6E665B"
+
+# ramp for scales that need an arbitrary number of steps (e.g. cup sizes)
+cafe_ramp <- grDevices::colorRampPalette(c(cafe_tan, cafe_sage, cafe_green, cafe_forest))
+
+# milk colours, keyed two ways: by label and by the 0-5 code
+milk_palette <- c(
+  "No Milk"       = cafe_tan,
+  "Nonfat Milk"   = cafe_sage,
+  "2% Milk"       = cafe_green,
+  "Soy Milk"      = cafe_caramel,
+  "Coconut Milk"  = cafe_mocha,
+  "Whole Milk"    = cafe_forest
+)
+milk_labels <- c("No Milk", "Nonfat", "2% Milk", "Soy", "Coconut", "Whole")
+milk_codes  <- setNames(unname(milk_palette), as.character(0:5))
+
+# tidy up nutrient labels on axes (display text only)
+pretty_nutrient <- function(x) {
+  x <- gsub("^mean_", "", x)
+  x <- gsub("_mg$", " (mg)", x)
+  x <- gsub("_g$", " (g)", x)
+  x <- gsub("_", " ", x)
+  tools::toTitleCase(x)
+}
+
+theme_cafe <- function(base_size = 13) {
+  theme_minimal(base_size = base_size) +
+    theme(
+      text             = element_text(colour = cafe_ink),
+      plot.title       = element_text(colour = cafe_forest, face = "bold",
+                                      size = base_size + 2, hjust = 0,
+                                      margin = margin(b = 8)),
+      plot.subtitle    = element_text(colour = cafe_mocha, size = base_size - 1.5,
+                                      margin = margin(b = 10)),
+      plot.caption     = element_text(colour = cafe_grey, size = base_size - 4, hjust = 0),
+      axis.title       = element_text(colour = cafe_forest, size = base_size - 1.5),
+      axis.text        = element_text(colour = cafe_grey, size = base_size - 2.5),
+      panel.grid.major = element_line(colour = "#E7DFD0", linewidth = 0.35),
+      panel.grid.minor = element_blank(),
+      panel.background = element_rect(fill = NA, colour = NA),
+      plot.background  = element_rect(fill = NA, colour = NA),
+      legend.position  = "bottom",
+      legend.title     = element_text(colour = cafe_forest, size = base_size - 2.5),
+      legend.text      = element_text(colour = cafe_grey, size = base_size - 2.5),
+      plot.margin      = margin(12, 16, 8, 12)
+    )
+}
+```
+
+```{r read_sbux_data, message = FALSE, include=FALSE}
+starbucks <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-12-21/starbucks.csv')
+```
+
+```{r making everything into double, echo=FALSE}
+
+starbucks$trans_fat_g <- as.double(starbucks$trans_fat_g)
+starbucks$fiber_g <- as.double(starbucks$fiber_g)
+
+```
+
+```{r finding means, echo=FALSE}
+starbucks_means <- starbucks %>%
+  summarize(
+    mean_calories = mean(calories),
+    mean_fat = mean(total_fat_g),
+    mean_saturated_fat = mean(saturated_fat_g),
+    mean_trans_fat = mean(trans_fat_g), 
+    mean_cholesterol = mean(cholesterol_mg),
+    mean_sodium = mean(sodium_mg),
+    mean_carbs = mean(total_carbs_g),
+    mean_fiber = mean(fiber_g),
+    mean_sugar = mean(sugar_g))
+
+```
+
+```{r seperating each milk}
+
+milk_no <- starbucks %>% filter(milk == 0)
+milk_nonfat <- starbucks %>% filter(milk == 1)
+milk_2 <- starbucks %>% filter(milk == 2)
+milk_soy <- starbucks %>% filter(milk == 3)
+milk_coconut <- starbucks %>% filter(milk == 4)
+milk_whole <- starbucks %>% filter(milk == 5)
+```
+
+
+The Counter {data-icon="ion-coffee"}
+=====================================
+
+Column {data-width=640}
+-------------------------------------
+
+### Pull up a chair
+
+**What is in the cup, really?**
+
+Every drink on the Starbucks board carries a nutrition panel that almost nobody reads. This dashboard gives a summar of it [the full menu table](https://github.com/rfordatascience/tidytuesday/blob/master/data/2021/2021-12-21/readme.md#starbucks) lists each drink with its size, its milk, its caffeine and the rest of its numbers.
+
+Nothing here is a recommendation. It is just the menu, with an extra analysis to it.
+
+***
+
+Column {data-width=360}
+-------------------------------------
+
+### Today's tasting flight
+
+**1 · First Pour**  
+Break down the drinks! Which styles dominate?
+
+**2 · Whipped Cream**  
+Does that swirl on top track with the sugar in the cup?
+
+**3 · Milk or No Milk**  
+What separates a drink with milk from one without, nutrient by nutrient?
+
+**4 · The Milk Bar**  
+Nonfat, 2%, soy, coconut, whole, does the choice of milk change the panel?
+
+**5 · Caffeine Hit**  
+How do caffeinated drinks compare with the decaf side of the board, and does caffeine actually help explain calories?
+
+### From the roastery
+
+The numbers come from the TidyTuesday release of the Starbucks drinks menu: one row per drink per size, with serving size, milk code, whipped-cream flag, caffeine and the full nutrition panel.
+
+
+First Pour {data-icon="ion-pie-graph" data-orientation=rows}
+=====================================
+
+Row {data-height=215}
+-----------------------------------------------------------------------
+
+### Drinks poured with milk
+
+```{r}
+total_drinks <- nrow(starbucks)
+drinks_with_milk <- nrow(starbucks %>% filter(milk != 0))
+
+percentage_w_milk <- (drinks_with_milk / total_drinks) * 100
+
+gauge_chart <- gauge(percentage_w_milk, min = 0, max = 100, symbol = '%',
+                     gaugeSectors(success = c(0, 100),
+                                  colors = c(cafe_green, cafe_gold, cafe_mocha)))
+gauge_chart
+
+```
+
+### Drinks with caffeine
+
+```{r}
+
+drinks_with_caffeine <- nrow(starbucks %>% filter(caffeine_mg > 0))
+
+percentage_w_caffeine <- (drinks_with_caffeine / total_drinks) * 100
+
+# sector colours only - espresso green up top, caramel in the middle band
+gauge_chart <- gauge(percentage_w_caffeine, min = 0, max = 100, symbol = '%',
+                     gaugeSectors(success = c(0, 100),
+                                  colors = c(cafe_forest, cafe_gold, cafe_mocha)))
+
+gauge_chart
+
+```
+
+### Reading the two dials
+
+- **85.6%** of the board is poured with some kind of milk
+- **86.6%** of the board carries caffeine
+- So nearly every drink on the menu is a milk drink, a caffeine drink, or both
+
+Row {data-height=500 .tabset .tabset-fade}
+-------------------------------------
+
+### Milk on the board
+
+```{r graph of beverage with different milk types}
+
+
+counting_by_milk <- rbind(
+  data.frame(MilkType = "No Milk", Count = nrow(milk_no)),
+  data.frame(MilkType = "Nonfat Milk", Count = nrow(milk_nonfat)),
+  data.frame(MilkType = "2% Milk", Count = nrow(milk_2)),
+  data.frame(MilkType = "Soy Milk", Count = nrow(milk_soy)),
+  data.frame(MilkType = "Coconut Milk", Count = nrow(milk_coconut)),
+  data.frame(MilkType = "Whole Milk", Count = nrow(milk_whole))
+)
+
+#make graph (use identity)
+graph_milk_count <- ggplot(counting_by_milk, aes(x = MilkType,
+                             y = Count, 
+                             fill = MilkType)) +
+  geom_bar(stat = "identity", width = 0.68) +
+  labs(title = "Drinks on the board, by milk",
+       subtitle = "Nonfat milk carries most of the menu",
+       y = "Count") +
+  theme_cafe() +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1),
+        legend.position = "none") +
+  scale_fill_manual(values = milk_palette) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.08))) +
+  labs(x = "Milk Type", y = "Count")
+
+ggplotly(graph_milk_count)
+
+```  
+ 
+
+### Caffeine split 
+ 
+ 
+```{r}
+
+drinks_with_caffeine <- nrow(starbucks %>% filter(caffeine_mg > 0))
+drinks_without_caffeine <- nrow(starbucks %>% filter(caffeine_mg == 0))
+
+numbers_drinks_caffeine <- c(drinks_with_caffeine, drinks_without_caffeine)
+labels <- c("Caffeine", "Non-Caffeine")
+
+colors <- c(cafe_forest, cafe_tan)
+
+par(bg = NA, mar = c(1, 1, 3, 1), family = "sans")
+
+pie(numbers_drinks_caffeine, labels = labels, col = colors,
+    border = "#FFFFFF", lwd = 2, clockwise = TRUE, init.angle = 90,
+    cex = 0.95, col.main = cafe_forest)
+
+legend("topright", legend = labels, fill = colors, bty = "n",
+       border = "#FFFFFF", cex = 0.9, text.col = cafe_ink)
+
+title("Caffeinated vs. decaf", col.main = cafe_forest, font.main = 2, cex.main = 1.15)
+
+
+```
+
+### Cup sizes 
+
+```{r table for sizes}
+
+beverage_data_sizes <- starbucks %>%
+  group_by(size) %>%
+  summarise('average serving size' = mean(serv_size_m_l))%>%
+  arrange(desc(`average serving size`))
+
+size_info <- beverage_data_sizes %>%
+  kable(caption = "Average pour per cup size, biggest first",
+        col.names = c("Cup size", "Average serving (mL)"),
+        digits = 1,
+        align = c("l", "r")) %>%
+  kable_styling(bootstrap_options = c("hover", "striped", "condensed"),
+                full_width = TRUE,
+                font_size = 13) %>%
+  row_spec(0, bold = TRUE, color = cafe_cream, background = cafe_forest)
+
+size_info
+
+```
+
+
+
+```{r sizes difference}
+
+counting_by_size <- starbucks %>%
+  group_by(size) %>%
+  summarise(Count = sum(n()))
+
+result_q1_sizes <- ggplot(counting_by_size, aes(x = size, y = Count, fill = size)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  labs(title = "How many drinks come in each size",
+       subtitle = "Grande, venti and tall carry the menu; the tiny sizes are add-ons",
+       x = "Size", y = "Count") +
+  theme_cafe() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none") +
+  scale_fill_manual(values = cafe_ramp(nrow(counting_by_size))) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.08)))
+
+ggplotly(result_q1_sizes)
+
+
+```
+
+
+Whipped Cream {data-icon="ion-ice-cream"}
+=====================================
+
+Column {.sidebar data-width=380}
+-----
+### The swirl on top
+
+Side by side, the box plots lean the same way: drinks finished with whipped cream sit at a **higher average sugar** level. Both groups spread widely, though, so the cream is not the whole story.
+
+
+Row
+-----
+### Sugar in the cup, with and without the whip
+
+```{r graph whip n sugar}
+
+drinks_whip <- starbucks %>% filter(whip == 1 )
+drinks_no_whip <- starbucks %>% filter(whip == 0)
+
+whip_no_whip <- rbind(drinks_whip, drinks_no_whip)
+
+
+whip_no_whip <- whip_no_whip %>% select(whip, sugar_g) 
+
+
+whip_no_whip <- whip_no_whip %>%
+  mutate(whip = case_when(
+    whip == 0 ~ "No Whipcream",
+    whip == 1 ~ "Whipcream"))
+
+
+sugar_drinks_whip <- ggplot(whip_no_whip, aes(x = whip, y = sugar_g, fill = whip)) +
+  geom_boxplot(width = 0.5, colour = cafe_forest, outlier.colour = cafe_mocha,
+               outlier.alpha = 0.55, outlier.size = 1.4) +
+  labs(
+    title = "Whipped cream and sugar, side by side",
+    subtitle = "Each box covers the middle half of the drinks in that group",
+    y = "Sugar (g)",
+    x = "Whipped cream"
+  ) +
+  theme_cafe() +
+  theme(legend.title = element_blank()) +
+  theme(axis.text.x = element_text(hjust = 1), legend.position = "none") +
+  scale_fill_manual(values = c("Whipcream" = cafe_caramel, "No Whipcream" = cafe_sage))
+
+ggplotly(sugar_drinks_whip)
+
+
+```
+
+
+
+Milk or No Milk {data-icon="ion-beaker"}
+=====================================
+
+Row
+-------------------------------------
+
+### Nutrient by nutrient
+
+```{r graph nutrition of milk n no  milk}
+
+beverages_with_milk <- starbucks %>% filter(milk == 0)
+beverages_without_milk <- starbucks %>% filter(milk != 0)
+
+
+nutritional_variables <- c("calories", "total_fat_g", "saturated_fat_g", "trans_fat_g", "cholesterol_mg", "sodium_mg", "total_carbs_g", "fiber_g", "sugar_g")
+
+combined_data <- rbind(
+  data.frame(BeverageType = "With Milk", beverages_with_milk[, nutritional_variables]),
+  data.frame(BeverageType = "Without Milk", beverages_without_milk[, nutritional_variables]))
+
+combined_data_long <- gather(combined_data, NutritionalVariable, Value, nutritional_variables)
+
+
+milk_vs_nonmilk <- ggplot(combined_data_long, aes(x = NutritionalVariable, y = Value, fill = BeverageType)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.72) +
+  labs(title = "Milk drinks against milk-free drinks",
+       subtitle = "Same nutrition panel, two different halves of the menu",
+       x = "Nutrient",
+       y = "Value") +
+  theme_cafe() +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1),
+        legend.title = element_blank()) +
+  scale_x_discrete(labels = pretty_nutrient) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.08))) +
+  scale_fill_manual(values = c("With Milk" = cafe_green, "Without Milk" = cafe_tan))
+
+ggplotly(milk_vs_nonmilk)
+
+```
+
+Column {.sidebar data-width=380}
+---------
+### Milk pulls its weight
+
+Line the two groups up and the milk drinks sit higher almost everywhere — calories, cholesterol, fibre, saturated fat, sodium, sugar, total carbohydrate and total fat.
+
+Whatever else goes into the cup, **milk is doing much of the heavy lifting on the nutrition panel.**
+
+
+The Milk Bar {data-icon="ion-stats-bars"}
+=====================================
+
+Column {.sidebar data-width=400}
+-------------------------------------
+### Chalkboard notes
+
+Across every chart on this page, the milk you pick leaves a mark. No-milk drinks sit lowest, and the different milks shuffle the panel in their own small ways.
+
+**1 · Calories**
+
+- Whole milk tops the calorie count on average.
+- The gaps between milks stay modest, so the effect is steady rather than dramatic.
+
+**2 · Total fat**
+
+- Same story as calories: whole milk leads.
+- Fat moves little from one milk to the next.
+
+**3 · Saturated fat**
+
+- Coconut milk sits highest here, with whole milk just behind.
+
+**4 · Trans fat**
+
+- Tiny either way. Whichever milk goes in, trans fat stays near zero next to the other nutrients.
+
+**5 · Cholesterol**
+
+- Whole milk leads again.
+- Soy and coconut come in lowest, well under the dairy options.
+
+**6 · Sodium**
+
+- No-milk drinks are very low; anything with milk jumps up.
+- Between the milks, sodium barely moves.
+
+**7 · Carbohydrate**
+
+- Little variation from one milk to the next.
+
+**8 · Fibre**
+
+- Most milk drinks land between 0 g and 1 g.
+- Soy is the outlier, carrying noticeably more fibre than the rest.
+
+**9 · Sugar**
+
+- 2% and whole milk average the same sugar.
+- Chasing less sugar? The no-milk side of the board is the safer bet.
+
+Row {.tabset .tabset-fade data-height=600}
+---------
+
+
+```{r average nutrition table by milk}
+
+mean_nutrition_by_milk <- starbucks %>%
+  group_by(milk) %>%
+  summarise(across(all_of(nutritional_variables), ~mean(.), .names = "mean_{.col}"))
+
+mean_nutrition_by_milk$milk <- as.character(mean_nutrition_by_milk$milk)
+```
+
+
+### Calories
+
+
+```{r graph calorie by milk}
+
+cal_milk <- ggplot(mean_nutrition_by_milk, aes(x = milk, y = mean_calories, fill = milk)) +
+  geom_bar(stat = "identity", width = 0.68) +
+  labs(title = "Average calories by milk",
+       subtitle = "Whole milk sits on top, but the spread is narrow") +
+  theme_cafe() +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
+        legend.position = "none") +
+  labs(x = "Milk Type", y = "Calories") +
+  scale_x_discrete(labels = milk_labels) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.12))) +
+  scale_fill_manual(values = milk_codes, name = "Milk Type", labels = milk_labels) +
+  geom_text(aes(label = round(mean_calories)),
+            vjust = -0.6, size = 3.4, colour = cafe_forest, fontface = "bold")
+
+ggplotly(cal_milk)
+
+
+```
+
+### Total fat
+
+
+```{r graph fat by milk}
+
+
+fat_milk <- ggplot(mean_nutrition_by_milk, aes(x = milk, y = mean_total_fat_g, fill = milk)) +
+  geom_bar(stat = "identity", width = 0.68) +
+  labs(title = "Average total fat by milk",
+       subtitle = "Grams per drink") +
+  theme_cafe() +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
+        legend.position = "none") +
+  labs(x = "Milk Type", y = "Fat (g)") +
+  scale_x_discrete(labels = milk_labels) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.12))) +
+  scale_fill_manual(values = milk_codes, name = "Milk Type", labels = milk_labels) +
+  geom_text(aes(label = round(mean_total_fat_g)),
+            vjust = -0.6, size = 3.4, colour = cafe_forest, fontface = "bold")
+
+ggplotly(fat_milk)
+
+
+```
+
+### Saturated fat
+
+```{r graph saturated by milk}
+
+
+sat_fat_milk <- ggplot(mean_nutrition_by_milk, aes(x = milk, y = mean_saturated_fat_g, fill = milk)) +
+  geom_bar(stat = "identity", width = 0.68) +
+  labs(title = "Average saturated fat by milk",
+       subtitle = "Coconut leads, whole milk follows") +
+  theme_cafe() +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
+        legend.position = "none") +
+  labs(x = "Milk Type", y = "Saturated fat (g)") +
+  scale_x_discrete(labels = milk_labels) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.12))) +
+  scale_fill_manual(values = milk_codes, name = "Milk Type", labels = milk_labels) +
+  geom_text(aes(label = round(mean_saturated_fat_g)),
+            vjust = -0.6, size = 3.4, colour = cafe_forest, fontface = "bold")
+
+ggplotly(sat_fat_milk)
+
+
+```
+
+### Trans fat
+
+```{r trans fat}
+transft_milk <- ggplot(mean_nutrition_by_milk, aes(x = milk, y = mean_trans_fat_g, fill = milk)) +
+  geom_bar(stat = "identity", width = 0.68) +
+  labs(title = "Average trans fat by milk",
+       subtitle = "Small numbers next to the rest of the panel") +
+  theme_cafe() +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
+        legend.position = "none") +
+  labs(x = "Milk Type", y = "Trans fat (g)") +
+  scale_x_discrete(labels = milk_labels) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.12))) +
+  scale_fill_manual(values = milk_codes, name = "Milk Type", labels = milk_labels) +
+  geom_text(aes(label = round(mean_trans_fat_g)),
+            vjust = -0.6, size = 3, colour = cafe_forest, fontface = "bold")
+
+ggplotly(transft_milk)
+
+
+```
+
+### Cholesterol
+
+
+```{r graph Cholesterol by milk}
+
+
+choles_milk <- ggplot(mean_nutrition_by_milk, aes(x = milk, y = mean_cholesterol_mg, fill = milk)) +
+  geom_bar(stat = "identity", width = 0.68) +
+  labs(title = "Average cholesterol by milk",
+       subtitle = "Soy and coconut sit lowest of the milk options") +
+  theme_cafe() +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
+        legend.position = "none") +
+  labs(x = "Milk Type", y = "Cholesterol (mg)") +
+  scale_x_discrete(labels = milk_labels) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.12))) +
+  scale_fill_manual(values = milk_codes, name = "Milk Type", labels = milk_labels) +
+  geom_text(aes(label = round(mean_cholesterol_mg)),
+            vjust = -0.6, size = 3.4, colour = cafe_forest, fontface = "bold")
+
+ggplotly(choles_milk)
+
+
+```
+
+### Sodium
+
+
+```{r graph Sodium by milk}
+
+
+sodium_milk <- ggplot(mean_nutrition_by_milk, aes(x = milk, y = mean_sodium_mg, fill = milk)) +
+  geom_bar(stat = "identity", width = 0.68) +
+  labs(title = "Average sodium by milk",
+       subtitle = "Milk-free drinks are the quiet ones here") +
+  theme_cafe() +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
+        legend.position = "none") +
+  labs(x = "Milk Type", y = "Sodium (mg)") +
+  scale_x_discrete(labels = milk_labels) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.12))) +
+  scale_fill_manual(values = milk_codes, name = "Milk Type", labels = milk_labels) +
+  geom_text(aes(label = round(mean_sodium_mg)),
+            vjust = -0.6, size = 3.4, colour = cafe_forest, fontface = "bold")
+
+ggplotly(sodium_milk)
+
+
+```
+
+### Carbohydrate
+
+
+```{r graph carbs by milk}
+
+
+carbs_milk <- ggplot(mean_nutrition_by_milk, aes(x = milk, y = mean_total_carbs_g, fill = milk)) +
+  geom_bar(stat = "identity", width = 0.68) +
+  labs(title = "Average carbohydrate by milk",
+       subtitle = "Little daylight between the milks") +
+  theme_cafe() +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
+        legend.position = "none") +
+  labs(x = "Milk Type", y = "Carbohydrate (g)") +
+  scale_x_discrete(labels = milk_labels) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.12))) +
+  scale_fill_manual(values = milk_codes, name = "Milk Type", labels = milk_labels) +
+  geom_text(aes(label = round(mean_total_carbs_g)),
+            vjust = -0.6, size = 3.4, colour = cafe_forest, fontface = "bold")
+
+ggplotly(carbs_milk)
+
+
+```
+
+### Fibre
+
+
+```{r graph fiber by milk}
+
+
+fiber_milk <- ggplot(mean_nutrition_by_milk, aes(x = milk, y = mean_fiber_g, fill = milk)) +
+  geom_bar(stat = "identity", width = 0.68) +
+  labs(title = "Average fibre by milk",
+       subtitle = "Soy is the one that stands out") +
+  theme_cafe() +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
+        legend.position = "none") +
+  labs(x = "Milk Type", y = "Fibre (g)") +
+  scale_x_discrete(labels = milk_labels) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.12))) +
+  scale_fill_manual(values = milk_codes, name = "Milk Type", labels = milk_labels) +
+  geom_text(aes(label = round(mean_fiber_g)),
+            vjust = -0.6, size = 3.4, colour = cafe_forest, fontface = "bold")
+
+ggplotly(fiber_milk)
+
+
+```
+
+### Sugar
+
+
+```{r graph sugar by milk}
+
+
+sugar_milk <- ggplot(mean_nutrition_by_milk, aes(x = milk, y = mean_sugar_g, fill = milk)) +
+  geom_bar(stat = "identity", width = 0.68) +
+  labs(title = "Average sugar by milk",
+       subtitle = "2% and whole milk land in the same place") +
+  theme_cafe() +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
+        legend.position = "none") +
+  labs(x = "Milk Type", y = "Sugar (g)") +
+  scale_x_discrete(labels = milk_labels) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.12))) +
+  scale_fill_manual(values = milk_codes, name = "Milk Type", labels = milk_labels) +
+  geom_text(aes(label = round(mean_sugar_g)),
+            vjust = -0.6, size = 3.4, colour = cafe_forest, fontface = "bold")
+
+ggplotly(sugar_milk)
+
+
+```
+
+
+
+
+Caffeine Hit {data-icon="ion-flash"}
+=====================================
+
+Column {.sidebar data-width=380}
+-------------------------------------
+### Chalkboard notes
+
+- Caffeinated drinks generally carry **less** of everything on the panel, with fibre being the exception.
+- Calories and sodium show the widest gap between the two sides of the board.
+- Fit a straight line through calories against caffeine and the slope points gently downhill, so caffeine on its own explains very little of what ends up in the cup.
+
+Row {.tabset .tabset-fade data-height=600}
+---------
+
+### Panel comparison
+
+```{r,echo=FALSE}
+
+caffeinated_drinks <- starbucks %>% filter(caffeine_mg > 0)
+decaffeinated_drinks <- starbucks %>% filter(caffeine_mg == 0)
+
+mean_nutrition_caffeinated <- caffeinated_drinks %>%
+  summarize(
+    mean_calories = mean(calories),
+    mean_total_fat = mean(total_fat_g),
+    mean_saturated_fat = mean(saturated_fat_g),
+    mean_trans_fat = mean(trans_fat_g),
+    mean_cholesterol = mean(cholesterol_mg),
+    mean_sodium = mean(sodium_mg),
+    mean_total_carbs = mean(total_carbs_g),
+    mean_fiber = mean(fiber_g),
+    mean_sugar = mean(sugar_g)
+  )
+
+mean_nutrition_decaffeinated <- decaffeinated_drinks %>%
+  summarize(
+    mean_calories = mean(calories),
+    mean_total_fat = mean(total_fat_g),
+    mean_saturated_fat = mean(saturated_fat_g),
+    mean_trans_fat = mean(trans_fat_g),
+    mean_cholesterol = mean(cholesterol_mg),
+    mean_sodium = mean(sodium_mg),
+    mean_total_carbs = mean(total_carbs_g),
+    mean_fiber = mean(fiber_g),
+    mean_sugar = mean(sugar_g)
+  )
+  
+
+
+```
+
+
+
+```{r graph caffeine vs non-caffeine}
+mean_nutrition <- rbind(mean_nutrition_caffeinated, mean_nutrition_decaffeinated)
+mean_nutrition$Caffeine <- c("Caffeinated", "Decaffeinated")
+
+mean_nutrition_long <- gather(mean_nutrition, Nutrient, Mean_Value, -Caffeine)
+
+caffeine_nutrition <- ggplot(mean_nutrition_long, aes(x = Nutrient, y = Mean_Value, fill = Caffeine)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.72) +
+  labs(
+    title = "Caffeinated against decaf, nutrient by nutrient",
+    subtitle = "Average value per drink",
+    y = "Average value",
+    x = "Nutrient"
+  ) +
+  theme_cafe() +
+  theme(legend.title = element_blank()) +
+  scale_x_discrete(labels = pretty_nutrient) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.08))) +
+  scale_fill_manual(values = c("Caffeinated" = cafe_forest,
+                               "Decaffeinated" = cafe_caramel)) +
+  theme(axis.text.x = element_text(angle = 35, hjust = 1))
+
+ggplotly(caffeine_nutrition)
+
+```
+
+
+### Caffeine against calories
+
+```{r linear model}
+
+caffeine_analysis <- rbind(caffeinated_drinks, decaffeinated_drinks)
+
+
+lm_model <- lm(calories ~ caffeine_mg, data = caffeine_analysis)
+
+
+summary(lm_model)
+
+
+```
+
+> **Reading the line**
+
+- Setting up the fit:
+
+  * The board is split in two — drinks with caffeine and drinks without.
+  * The line then asks whether caffeine moves calories at all.
+
+* Pearson correlation coefficient(r) = 0.0746
+
+* Linear Model Information:
+
+  * Intercept = 240.46421
+  * Estimates using calories = -0.05241
+  * $$\widehat{\text{Calories}} = 240.46421 - -0.13141~\text{Caffeine Content} + \widehat{\epsilon}$$
+
+***
+
+
+
+Last Sip {data-icon="ion-checkmark-round"}
+=====================================
+
+Column {data-width=620}
+-------------------------------------
+
+### What the menu gives up
+
+**Five things worth remembering:**
+
+**1 · Almost nothing is plain.**  
+More than 80% of the board comes with milk, caffeine, or both.
+
+**2 · The whip shows up in the sugar.**  
+Drinks finished with whipped cream average more sugar than those without.
+
+**3 · Milk lifts the whole panel.**  
+Calories, trans fat, saturated fat, total fat, sodium, sugar, fibre, cholesterol and carbohydrate all sit higher in milk drinks.
+
+**4 · Which milk matters too.**  
+Every milk leaves its own mark — coconut on saturated fat, soy on fibre, whole milk on calories and cholesterol.
+
+**5 · Caffeine is not the culprit.**  
+Decaf drinks run higher on most of the panel, fibre aside. Calories and caffeine even lean slightly against each other: more caffeine, marginally fewer predicted calories.
+
+Column {data-width=380}
+-------------------------------------
+
+### Ordering with this in mind
+
+If the goal is a lighter cup, the levers are the ones the menu hands you at the register: **skip the whip, go lighter on the milk( or skip it) — and don't count on decaf being the gentler choice.**
+
+***
+
+Caffeine barely budges the calorie line, so the espresso shot is rarely what makes a drink heavy. The milk and the sugar get there first.
+
+
+Sources {data-icon="ion-bookmark"}
+=====================================
+
+Column
+-------------------------------------
+
+### Where this came from
+
+[1] Colors (ggplot2). (n.d.). http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/
+
+[2] Comprehensive R Archive Network (CRAN). (2019, May 31). CRAN - Package ggResidpanel. GgResidpanel: Panels and Interactive Versions of Diagnostic Plots using 'ggplot2'. https://cran.r-project.org/web/packages/ggResidpanel/index.html
+
+[3] Comprehensive R Archive Network (CRAN). (2021a, April 5). CRAN - Package broom. Broom: Convert Statistical Objects into Tidy Tibbles. https://cran.r-project.org/web/packages/broom/index.html
+
+[4] R Coder: Create a Pie Chart in R. (n.d.). Retrieved from https://r-coder.com/pie-chart-r/
+
+[5] RStudio Flexdashboard: Theming and Skins. (n.d.). Retrieved from https://rstudio.github.io/flexdashboard/articles/theme.html
+
+[6] RStudio Flexdashboard: Using Flexdashboard. (n.d.). Retrieved from https://pkgs.rstudio.com/flexdashboard/articles/using.html
+
+[7]. Statology: How to Replace Values in a Data Frame in R. (n.d.). Retrieved from https://www.statology.org/replace-values-in-data-frame-r/#
+
+[8] Wickham et al., (2019). Welcome to the tidyverse. Journal of Open
+  Source Software, 4(43), 1686, https://doi.org/10.21105/joss.01686
